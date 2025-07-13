@@ -29,11 +29,9 @@ export function Header() {
           key={item.href}
           onClick={() => setIsOpen(false)}
           asChild
-          className="bg-transparent hover:bg-transparent text-black shadow-none p-0"
+          className="bg-transparent hover:bg-transparent text-black text-base shadow-none p-0"
         >
-          <Link className="text-base" href={item.href}>
-            {item.label}
-          </Link>
+          <Link href={item.href}>{item.label}</Link>
         </Button>
       ))}
 
@@ -45,7 +43,7 @@ export function Header() {
           Acessar Clínica
         </Link>
       ) : (
-        <Button className="mt-4">
+        <Button className="mt-4 text-base text-black">
           <LogIn />
           Portal da Clínica
         </Button>
@@ -56,8 +54,8 @@ export function Header() {
   return (
     <header className="fixed top-0 right-0 left-0 z-[999] py-4 px-6 bg-white">
       <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" className="text-3xl font-bold text-blue-500 uppercase">
-          App <span className="font-light">Clínica</span>
+        <Link href="/" className="text-3xl font-bold text-blue-500">
+          Master <span className="font-light">Clínica</span>
         </Link>
         <nav className="hidden md:flex items-center space-x-4">
           <NavLink />
