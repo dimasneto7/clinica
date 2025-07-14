@@ -4,8 +4,6 @@ import { redirect } from 'next/navigation'
 export default async function Dashboard() {
   const session = await getSession()
 
-  console.log('session', session)
-
   if (!session) {
     redirect('/')
   }
