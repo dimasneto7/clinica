@@ -1,5 +1,5 @@
 'use client'
-import { useProfileForm } from './profile-form'
+import { ProfileFormData, useProfileForm } from './profile-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Form,
@@ -33,11 +33,30 @@ import imgTest from '../../../../../../public/foto1.png'
 import { ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { Prisma } from '@/generated/prisma'
+import { updateProfile } from '../_actions/update-profile'
 
-export function ProfileContent() {
-  const [selectedHours, setSelectedHours] = useState<string[]>([])
+type UserWithSubscription = Prisma.UserGetPayload<{
+  include: {
+    subscription: true
+  }
+}>
+
+interface ProfileContentProps {
+  user: UserWithSubscription
+}
+
+export function ProfileContent({ user }: ProfileContentProps) {
+  console.log('user', user)
+  const [selectedHours, setSelectedHours] = useState<string[]>(user.times ?? [])
   const [dialogIsOpen, setDialogIsOpen] = useState(false)
-  const form = useProfileForm()
+  const form = useProfileForm({
+    name: user.name,
+    address: user.address,
+    phone: user.phone,
+    status: user.status,
+    timeZone: user.timeZone,
+  })
 
   function generateTimeSlots(): string[] {
     const hours: string[] = []
@@ -61,12 +80,35 @@ export function ProfileContent() {
     )
   }
 
-  console.log('Horários gerados:', hours)
+  const timeZones = Intl.supportedValuesOf('timeZone').filter(
+    (zone) =>
+      zone.startsWith('America/Sao_Paulo') ||
+      zone.startsWith('America/Fortaleza') ||
+      zone.startsWith('America/Recife') ||
+      zone.startsWith('America/Bahia') ||
+      zone.startsWith('America/Belem') ||
+      zone.startsWith('America/Manaus') ||
+      zone.startsWith('America/Cuiaba') ||
+      zone.startsWith('America/Boa_Vista')
+  )
+
+  async function onSubmit(values: ProfileFormData) {
+    const response = await updateProfile({
+      name: values.name,
+      address: values.address,
+      phone: values.phone,
+      status: values.status === 'active' ? true : false,
+      timeZone: values.timeZone,
+      times: selectedHours || [],
+    })
+
+    console.log('response', response)
+  }
 
   return (
     <div className="mx-auto">
       <Form {...form}>
-        <form>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
               <CardTitle>Meu Perfil</CardTitle>
@@ -75,7 +117,7 @@ export function ProfileContent() {
               <div className="flex justify-center">
                 <div className="bg-gray-200 relative w-40 h-40 rounded-full overflow-hidden">
                   <Image
-                    src={imgTest}
+                    src={user.image ? user.image : imgTest}
                     alt="Foto da Clínica"
                     fill
                     className="object-cover"
@@ -218,6 +260,42 @@ export function ProfileContent() {
                     </DialogContent>
                   </Dialog>
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="timeZone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">
+                        Selecione o fuso horário
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o seu fuso horário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeZones.map((zone) => (
+                              <SelectItem key={zone} value={zone}>
+                                {zone}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                >
+                  Salvar alterações
+                </Button>
               </div>
             </CardContent>
           </Card>

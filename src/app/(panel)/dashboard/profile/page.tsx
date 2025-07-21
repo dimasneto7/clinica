@@ -18,7 +18,7 @@ export default async function Profile() {
 
   return (
     <div>
-      <ProfileContent />
+      <ProfileContent user={user} />
     </div>
   )
 }
