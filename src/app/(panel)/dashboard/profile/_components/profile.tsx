@@ -35,6 +35,8 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Prisma } from '@/generated/prisma'
 import { updateProfile } from '../_actions/update-profile'
+import { toast } from 'sonner'
+import { formatPhone, extractPhoneNumber } from '@/utils/formatPhone'
 
 type UserWithSubscription = Prisma.UserGetPayload<{
   include: {
@@ -93,16 +95,23 @@ export function ProfileContent({ user }: ProfileContentProps) {
   )
 
   async function onSubmit(values: ProfileFormData) {
+    const etractValue = extractPhoneNumber(values.phone || '')
+
     const response = await updateProfile({
       name: values.name,
       address: values.address,
-      phone: values.phone,
+      phone: etractValue,
       status: values.status === 'active' ? true : false,
       timeZone: values.timeZone,
       times: selectedHours || [],
     })
 
-    console.log('response', response)
+    if (response.error) {
+      toast.error(response.error, { closeButton: true })
+      return
+    }
+
+    toast.success(response.data)
   }
 
   return (
@@ -170,7 +179,14 @@ export function ProfileContent({ user }: ProfileContentProps) {
                     <FormItem>
                       <FormLabel className="font-semibold">Telefone</FormLabel>
                       <FormControl>
-                        <Input placeholder="Digite o telefone..." {...field} />
+                        <Input
+                          placeholder="Digite o telefone..."
+                          {...field}
+                          onChange={(e) => {
+                            const formattedValue = formatPhone(e.target.value)
+                            field.onChange(formattedValue)
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
