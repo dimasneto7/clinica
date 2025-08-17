@@ -23,14 +23,28 @@ import { Button } from '@/components/ui/button'
 import { convertRealToCents } from '@/utils/convertCurrency'
 import { createNewService } from '../_actions/create-service'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { updateService } from '../_actions/update-service'
 
 interface DialogServiceProps {
   closeModal: () => void
+  serviceId?: string
+  initialValues?: {
+    name: string
+    price: string
+    hours: string
+    minutes: string
+  }
 }
 
-export function DialogService({ closeModal }: DialogServiceProps) {
-  const form = useDialogServiceForm()
+export function DialogService({
+  closeModal,
+  serviceId,
+  initialValues,
+}: DialogServiceProps) {
+  const form = useDialogServiceForm({ initialValues: initialValues })
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   async function onSubmit(values: DialogServiceFormData) {
     setLoading(true)
@@ -41,6 +55,16 @@ export function DialogService({ closeModal }: DialogServiceProps) {
 
     // converter horas p minutos
     const duration = hours * 60 + minutes
+
+    if (serviceId) {
+      await editServiceById({
+        serviceId,
+        name: values.name,
+        priceInCents,
+        duration,
+      })
+      return
+    }
 
     const response = await createNewService({
       name: values.name,
@@ -57,6 +81,37 @@ export function DialogService({ closeModal }: DialogServiceProps) {
 
     toast.success('Serviço cadastrado com sucesso!')
     handleCloseModal()
+    router.refresh()
+  }
+
+  async function editServiceById({
+    serviceId,
+    name,
+    priceInCents,
+    duration,
+  }: {
+    serviceId: string
+    name: string
+    priceInCents: number
+    duration: number
+  }) {
+    const response = await updateService({
+      serviceId,
+      name,
+      price: priceInCents,
+      duration,
+    })
+
+    setLoading(false)
+
+    if (response.error) {
+      toast.error(response.error)
+      return
+    }
+
+    toast(response.data)
+    handleCloseModal()
+    router.refresh()
   }
 
   function handleCloseModal() {
@@ -162,7 +217,9 @@ export function DialogService({ closeModal }: DialogServiceProps) {
             className="w-full mt-4 font-semibold text-white bg-blue-500 hover:bg-blue-600 cursor-pointer"
             disabled={loading}
           >
-            {loading ? 'Carregando...' : 'Adicionar Serviço'}
+            {loading
+              ? 'Carregando...'
+              : `${serviceId ? 'Editar Serviço' : 'Cadastrar Serviço'} `}
           </Button>
         </form>
       </Form>
