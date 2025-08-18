@@ -30,13 +30,15 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import Image from 'next/image'
 import imgTest from '../../../../../../public/foto1.png'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Prisma } from '@/generated/prisma'
 import { updateProfile } from '../_actions/update-profile'
 import { toast } from 'sonner'
 import { formatPhone, extractPhoneNumber } from '@/utils/formatPhone'
+import { signOut, useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 type UserWithSubscription = Prisma.UserGetPayload<{
   include: {
@@ -49,9 +51,11 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ user }: ProfileContentProps) {
-  console.log('user', user)
+  const router = useRouter()
   const [selectedHours, setSelectedHours] = useState<string[]>(user.times ?? [])
   const [dialogIsOpen, setDialogIsOpen] = useState(false)
+  const { update } = useSession()
+
   const form = useProfileForm({
     name: user.name,
     address: user.address,
@@ -112,6 +116,12 @@ export function ProfileContent({ user }: ProfileContentProps) {
     }
 
     toast.success(response.data)
+  }
+
+  async function handleLogout() {
+    await signOut()
+    await update()
+    router.replace('/')
   }
 
   return (
@@ -317,6 +327,17 @@ export function ProfileContent({ user }: ProfileContentProps) {
           </Card>
         </form>
       </Form>
+
+      <section className="mt-4">
+        <Button
+          variant="ghost"
+          className="border border-gray-300 p-2 cursor-pointer"
+          onClick={handleLogout}
+        >
+          Sair da conta
+          <LogOut className="w-5 h-5 ml-2" />
+        </Button>
+      </section>
     </div>
   )
 }
