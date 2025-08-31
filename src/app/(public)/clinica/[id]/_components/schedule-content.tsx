@@ -1,5 +1,5 @@
 'use client'
-
+import { useState } from 'react'
 import Image from 'next/image'
 import imgTest from '../../../../../../public/foto2.png'
 import { MapPin } from 'lucide-react'
@@ -18,10 +18,17 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { formatPhone } from '@/utils/formatPhone'
 import { DateTimePicker } from './date-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type UserWithServiceAndSubscription = Prisma.UserGetPayload<{
   include: {
-    service: true
+    services: true
     subscription: true
   }
 }>
@@ -30,8 +37,21 @@ interface ScheduleContentProps {
   clinic: UserWithServiceAndSubscription
 }
 
+interface TimeSlot {
+  time: string
+  available: boolean
+}
+
 export function ScheduleContent({ clinic }: ScheduleContentProps) {
   const form = useAppointmentForm()
+  const { watch } = form
+
+  const [selectedTime, setSelectedTime] = useState('')
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [blockedTimes, setBlockedTimes] = useState<string[]>([])
+
+  async function handleRegisterAppointment(formData: AppointmentFormData) {}
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,7 +81,10 @@ export function ScheduleContent({ clinic }: ScheduleContentProps) {
       <section className="max-w-2xl mx-auto w-full mt-6">
         {/* Formulário de Agendamento */}
         <Form {...form}>
-          <form className="mx-2 pace-y-6 bg-white p-6 border rounded-md shadow-sm">
+          <form
+            onSubmit={form.handleSubmit(handleRegisterAppointment)}
+            className="mx-2 pace-y-6 bg-white p-6 border rounded-md shadow-sm"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -141,6 +164,53 @@ export function ScheduleContent({ clinic }: ScheduleContentProps) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="serviceId"
+              render={({ field }) => (
+                <FormItem className="">
+                  <FormLabel className="font-semibold">
+                    Selecione o serviço:
+                  </FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um serviço" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clinic.services.map((service) => (
+                          <SelectItem key={service.id} value={service.id}>
+                            {service.name} ({Math.floor(service.duration / 60)}h{' '}
+                            {service.duration % 60}min)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {clinic.status ? (
+              <Button
+                type="submit"
+                disabled={
+                  !watch('name') ||
+                  !watch('email') ||
+                  !watch('phone') ||
+                  !watch('date')
+                }
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded cursor-pointer"
+              >
+                Realizar agendamento
+              </Button>
+            ) : (
+              <p className="text-red-500 border border-gray-200 rounded text-center px-4 py-2 mt-5">
+                A Clínica está fechada nesse momento
+              </p>
+            )}
           </form>
         </Form>
       </section>
